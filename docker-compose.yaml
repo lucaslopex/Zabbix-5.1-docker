@@ -1,0 +1,75 @@
+version: '3.5'
+
+networks:
+  zabbix-network:
+    driver: bridge
+
+services:
+  db:
+    build: 
+        context: ./mysql
+    container_name: db
+    networks:
+        - zabbix-network
+    volumes:
+      - './mysql/data/:/var/lib/data'
+    environment:
+      - MYSQL_ROOT_PASSWORD=Zabbix@1997
+      - MYSQL_DATABASE=zabbix
+      - MYSQL_USER=zabbix
+      - MYSQL_PASSWORD=Zabbix@1997
+    ports:
+      - '3306:3306'
+  
+  zabbix-server:
+    container_name: zabbix-server
+    image: zabbix/zabbix-server-mysql:ubuntu-5.0.1
+    networks:
+        - zabbix-network
+    volumes:
+      - './zabbix/scripts:/usr/lib/zabbix/alertscripts'
+    ports:
+      - '10050:10050'
+      - '10051:10051'
+    environment:
+      - DB_SERVER_HOST=db
+      - MYSQL_DATABASE=zabbix
+      - MYSQL_USER=zabbix
+      - MYSQL_PASSWORD=Zabbix@1997
+    depends_on:
+      - db 
+  
+  zabbix-frontend:
+    container_name: zabbix-frontend
+    image: zabbix/zabbix-web-apache-mysql:ubuntu-5.0.1
+    networks:
+        - zabbix-network
+    links:
+      - db
+    restart: always
+    ports:
+      - '80:8080'
+      - '443:8443'
+    environment:
+      - DB_SERVER_HOST=db
+      - MYSQL_DATABASE=zabbix
+      - MYSQL_USER=zabbix
+      - MYSQL_PASSWORD=Zabbix@1997
+      - PHP_TZ=America/Sao_Paulo
+    depends_on:
+      - db
+  
+  grafana:
+    container_name: grafana
+    image: grafana/grafana
+    networks:
+        - zabbix-network
+    links:
+      - db
+      - zabbix-server
+    restart: always
+    ports:
+      - '3000:3000'
+    depends_on:
+      - db
+      - zabbix-server
