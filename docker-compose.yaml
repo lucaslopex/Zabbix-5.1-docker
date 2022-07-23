@@ -12,7 +12,7 @@ services:
     networks:
         - zabbix-network
     volumes:
-      - './mysql/data/:/var/lib/data'
+      - './zabbix/data/:/var/lib/data'
     environment:
       - MYSQL_ROOT_PASSWORD=Zabbix@1997
       - MYSQL_DATABASE=zabbix
